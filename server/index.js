@@ -146,7 +146,7 @@ app.get('*', (req, res) => {
 });
 
 // Start express server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`=================================================`);
   console.log(` Autonomous AI Creator API Server running on port ${PORT}`);
   console.log(` - POST /api/agent/init`);

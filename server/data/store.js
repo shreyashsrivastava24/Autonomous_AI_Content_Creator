@@ -3,35 +3,52 @@ const path = require('path');
 
 const DB_PATH = path.join(__dirname, 'db.json');
 
+// In-memory fallback data cache for read-only cloud environments
+let inMemoryData = {
+  agents: {},
+  feeds: {},
+  rejections: {},
+  memory: {}
+};
+
 // Initialize store file if it does not exist
 function initStore() {
-  if (!fs.existsSync(DB_PATH)) {
-    const initialData = {
-      agents: {},
-      feeds: {},
-      rejections: {},
-      memory: {}
-    };
-    fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2), 'utf8');
+  try {
+    if (!fs.existsSync(DB_PATH)) {
+      const initialData = {
+        agents: {},
+        feeds: {},
+        rejections: {},
+        memory: {}
+      };
+      fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2), 'utf8');
+    }
+  } catch (err) {
+    console.warn('[Store] Could not write to disk, using in-memory store:', err.message);
   }
 }
 
 function readStore() {
   initStore();
   try {
+    if (!fs.existsSync(DB_PATH)) {
+      return inMemoryData;
+    }
     const raw = fs.readFileSync(DB_PATH, 'utf8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    inMemoryData = parsed;
+    return parsed;
   } catch (err) {
-    console.error('Error reading store DB:', err);
-    return { agents: {}, feeds: {}, rejections: {}, memory: {} };
+    return inMemoryData;
   }
 }
 
 function writeStore(data) {
+  inMemoryData = data;
   try {
     fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf8');
   } catch (err) {
-    console.error('Error writing store DB:', err);
+    console.warn('[Store] Disk write skipped (in-memory mode active):', err.message);
   }
 }
 

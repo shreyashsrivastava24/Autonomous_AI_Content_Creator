@@ -19,11 +19,23 @@ async function runProductionTestSuite() {
     }
   }
 
+  let serverProcess = null;
   try {
     // --------------------------------------------------
     // PHASE 1: SERVER & ACCESSIBILITY VERIFICATION
     // --------------------------------------------------
     console.log('--- PHASE 1: SERVER ACCESSIBILITY & APP VERIFICATION ---');
+
+    // Auto-start server if not already running
+    try {
+      await axios.get(BASE_URL, { timeout: 1000 });
+    } catch (e) {
+      console.log('Starting local Express server on port 3000 for test suite...');
+      const { spawn } = require('child_process');
+      serverProcess = spawn('node', ['server/index.js'], { stdio: 'ignore' });
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+
     const rootRes = await axios.get(BASE_URL);
     assert(rootRes.status === 200, 'Phase 1 - Root URL Accessible', `Status 200 OK`);
     assert(rootRes.data.includes('<title>'), 'Phase 1 - HTML Entry Point Valid', 'Vite React App served');
@@ -108,9 +120,11 @@ async function runProductionTestSuite() {
     console.log('\n================================================================');
     console.log(` AUDIT RESULT: ${passedTests} / ${totalTests} TESTS PASSED (100% SUCCESS)`);
     console.log('================================================================\n');
+    if (serverProcess) serverProcess.kill();
     process.exit(0);
   } catch (err) {
     console.error('Audit Error:', err.response ? err.response.data : err.message);
+    if (serverProcess) serverProcess.kill();
     process.exit(1);
   }
 }

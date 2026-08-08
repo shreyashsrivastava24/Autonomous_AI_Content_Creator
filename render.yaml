@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: autonomous-ai-creator
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: GEMINI_API_KEY
+        sync: false
