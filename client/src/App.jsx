@@ -34,11 +34,13 @@ export default function App() {
   const fetchAgents = async () => {
     try {
       const res = await fetch('/api/agents');
-      const data = await res.json();
-      if (data.agents && data.agents.length > 0) {
-        setAgents(data.agents);
-        if (!selectedAgentId) {
-          setSelectedAgentId(data.agents[0].id);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.agents && data.agents.length > 0) {
+          setAgents(data.agents);
+          if (!selectedAgentId) {
+            setSelectedAgentId(data.agents[0].id);
+          }
         }
       }
     } catch (err) {
@@ -52,18 +54,24 @@ export default function App() {
     try {
       // 1. Fetch Feed (GET /api/agent/feed?agentId=...)
       const feedRes = await fetch(`/api/agent/feed?agentId=${agentId}`);
-      const feedData = await feedRes.json();
-      setPosts(feedData.posts || []);
+      if (feedRes.ok) {
+        const feedData = await feedRes.json();
+        setPosts(feedData.posts || []);
+      }
 
       // 2. Fetch Rejections
       const rejRes = await fetch(`/api/agent/rejections?agentId=${agentId}`);
-      const rejData = await rejRes.json();
-      setRejections(rejData.rejections || []);
+      if (rejRes.ok) {
+        const rejData = await rejRes.json();
+        setRejections(rejData.rejections || []);
+      }
 
       // 3. Fetch Memory
       const memRes = await fetch(`/api/agent/memory?agentId=${agentId}`);
-      const memData = await memRes.json();
-      setMemory(memData.memory || null);
+      if (memRes.ok) {
+        const memData = await memRes.json();
+        setMemory(memData.memory || null);
+      }
 
       setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     } catch (err) {
@@ -100,12 +108,13 @@ export default function App() {
           intervalMinutes
         })
       });
-      const data = await res.json();
-
-      if (data.agentId) {
-        await fetchAgents();
-        setSelectedAgentId(data.agentId);
-        await fetchAgentData(data.agentId);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.agentId) {
+          await fetchAgents();
+          setSelectedAgentId(data.agentId);
+          await fetchAgentData(data.agentId);
+        }
       }
     } catch (err) {
       console.error('Failed to init agent:', err);
@@ -124,9 +133,11 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agentId: selectedAgentId })
       });
-      await res.json();
-      await fetchAgentData(selectedAgentId);
-      setActiveTab('feed');
+      if (res.ok) {
+        await res.json();
+        await fetchAgentData(selectedAgentId);
+        setActiveTab('feed');
+      }
     } catch (err) {
       console.error('Error triggering cycle:', err);
     } finally {
